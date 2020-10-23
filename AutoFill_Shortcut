@@ -35,7 +35,7 @@ Sub FillDownWhenLeft()
    
    
     'check what's there, move one up if not spot on
-    If Selection.Count = 1 Then
+    If Selection.Count = 1 And Not IsError(Selection) Then
         If Selection = "" Then Selection.Offset(-1, 0).Select
         If Selection = "" Then
             MsgBox "Nothing to fill from"
