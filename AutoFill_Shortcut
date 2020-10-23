@@ -1,0 +1,89 @@
+Sub FillDownWhenLeft()
+   
+    lastrow = 0
+    lastrow_left = 0
+    lastrow_right = 0
+   
+    filltype = xlFillDefault
+    If Selection.Rows.Count = 1 Then filltype = xlFillCopy
+   
+    tipuri = Array("center", "left", "right")
+   
+    'setting the 3 last rows
+    On Error Resume Next
+    lastrow = Range(ActiveCell, ActiveCell.Offset(100000, 0)).Find(What:="*", _
+                    LookAt:=xlPart, _
+                    LookIn:=xlValues, _
+                    SearchOrder:=xlByRows, _
+                    SearchDirection:=xlPrevious, _
+                    MatchCase:=False).Row
+                    
+    lastrow_left = Range(ActiveCell.Offset(0, -1), ActiveCell.Offset(100000, -1)).Find(What:="*", _
+                    LookAt:=xlPart, _
+                    LookIn:=xlValues, _
+                    SearchOrder:=xlByRows, _
+                    SearchDirection:=xlPrevious, _
+                    MatchCase:=False).Row
+                    
+    lastrow_right = Range(ActiveCell.Offset(0, 1), ActiveCell.Offset(100000, 1)).Find(What:="*", _
+                    LookAt:=xlPart, _
+                    LookIn:=xlValues, _
+                    SearchOrder:=xlByRows, _
+                    SearchDirection:=xlPrevious, _
+                    MatchCase:=False).Row
+    On Error GoTo 0
+   
+   
+    'check what's there, move one up if not spot on
+    If Selection.Count = 1 Then
+        If Selection = "" Then Selection.Offset(-1, 0).Select
+        If Selection = "" Then
+            MsgBox "Nothing to fill from"
+            Selection.Offset(1, 0).Select
+            Exit Sub
+        End If
+    End If
+    
+    
+    Set affectedRange = Range(ActiveCell.Offset(0, 0), Selection.Offset(0, 0).End(xlDown).Offset(0, 0))
+        tip = 0
+    'only set left range if current column is not A
+    If lastrow_left > 0 Then Set affectedRange_left = Range(ActiveCell.Offset(0, 0), Selection.Offset(0, -1).End(xlDown).Offset(0, 1))
+    Set affectedRange_right = Range(ActiveCell.Offset(0, 0), Selection.Offset(0, 1).End(xlDown).Offset(0, -1))
+        
+    'select bigger range to find type
+    maxrows = WorksheetFunction.Max(lastrow_left, lastrow, lastrow_right)
+    If maxrows = lastrow_right Then
+        'And affectedRange_left.Count < affectedRange_right.Count And affectedRange.Count < affectedRange_right.Count Then
+            Set affectedRange = affectedRange_right
+            tip = 2
+    ElseIf maxrows = lastrow_right Then
+            Set affectedRange = affectedRange_left
+            tip = 1
+    End If
+    
+     
+    'center
+    If tip = 0 Then
+        Set affectedRange = Range(ActiveCell.Offset(0, 0), Selection.Offset(0, 0).End(xlDown).Offset(0, 0))
+    'leftside
+    ElseIf tip = 1 Then
+        Set affectedRange = Range(ActiveCell.Offset(0, 0), Selection.Offset(0, -1).End(xlDown).Offset(0, 1))
+    'rightside
+    ElseIf tip = 2 Then
+        Set affectedRange = Range(ActiveCell.Offset(0, 0), Selection.Offset(0, 1).End(xlDown).Offset(0, -1))
+      
+    End If
+    
+    
+    'now the real action
+    If affectedRange.Count > 0 Then
+        confirm = MsgBox("There are " & maxrows - ActiveCell.Row & " rows to be affected along " & tipuri(tip), vbOKCancel, "U sure?")
+        If confirm = 2 Then
+            Exit Sub
+        Else:
+            Selection.AutoFill Destination:=Range(Selection.Cells(1), Cells(maxrows, Selection.Cells(1).Column + Selection.Columns.Count - 1)), Type:=filltype
+        End If
+    End If
+  
+End Sub
